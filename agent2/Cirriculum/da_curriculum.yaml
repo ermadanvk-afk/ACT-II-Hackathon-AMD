@@ -1,0 +1,64 @@
+name: "Data Analyst Aptitude and Interview Curriculum"
+version: "1.0"
+description: "Progressive sequence of topics for Agent 2 (Soft Skills & Aptitude) to teach, test, and evaluate. The agent will read this sequence, query the knowledge base using the 'kb_tags', and generate personalized questions based on user performance."
+
+modules:
+  - id: "module_1"
+    name: "Quantitative Foundations"
+    type: "aptitude"
+    description: "Basic math required for everyday data analysis."
+    sequence:
+      - topic: "Percentages & Growth Rates"
+        kb_tags: ["math", "percentages", "mom_growth", "yoy_growth"]
+      - topic: "Ratios & Proportions"
+        kb_tags: ["math", "ratios", "conversion_funnels"]
+      - topic: "Averages & Weighted Averages"
+        kb_tags: ["math", "averages", "arpu", "weighted_mean"]
+
+  - id: "module_2"
+    name: "Analytical Reasoning"
+    type: "aptitude"
+    description: "Testing logic, deduction, and identifying missing information."
+    sequence:
+      - topic: "Pattern Recognition & Series"
+        kb_tags: ["logic", "number_series", "trend_identification"]
+      - topic: "Data Sufficiency"
+        kb_tags: ["logic", "data_sufficiency", "missing_variables"]
+      - topic: "Cause and Effect"
+        kb_tags: ["logic", "causation_vs_correlation"]
+
+  - id: "module_3"
+    name: "Data Interpretation (Core)"
+    type: "aptitude"
+    description: "Extracting mathematical insights from visual data."
+    sequence:
+      - topic: "Tabular Data Interpretation"
+        kb_tags: ["di", "tables", "financial_reports"]
+      - topic: "Bar and Pie Charts"
+        kb_tags: ["di", "bar_charts", "pie_charts", "market_share"]
+      - topic: "Line Graphs & Scatter Plots"
+        kb_tags: ["di", "line_graphs", "trends", "scatter_plots"]
+
+  - id: "module_4"
+    name: "Behavioral & Soft Skills"
+    type: "interview"
+    description: "Evaluating communication and past experiences using the STAR method."
+    sequence:
+      - topic: "The STAR Framework Basics"
+        kb_tags: ["soft_skills", "star_method", "communication_rubric"]
+      - topic: "Stakeholder Management & Conflict"
+        kb_tags: ["soft_skills", "pushback", "non_technical_audiences"]
+      - topic: "Impact & Result Articulation"
+        kb_tags: ["soft_skills", "business_impact", "quantifying_results"]
+
+  - id: "module_5"
+    name: "Business Acumen & Case Studies"
+    type: "interview"
+    description: "Real-world problem solving and metric estimation."
+    sequence:
+      - topic: "Guesstimates & Market Sizing"
+        kb_tags: ["case_study", "guesstimates", "proxy_variables", "bottom_up_approach"]
+      - topic: "Root Cause Analysis (Metric Drops)"
+        kb_tags: ["case_study", "rca", "issue_trees", "mece_framework"]
+      - topic: "Defining Success Metrics"
+        kb_tags: ["case_study", "product_metrics", "kpi_definition"]

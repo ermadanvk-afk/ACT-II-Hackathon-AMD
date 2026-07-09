@@ -1,0 +1,52 @@
+name: "Machine Learning Engineer Aptitude and Interview Curriculum"
+version: "1.0"
+description: "Progressive sequence of topics for Agent 2 to teach, test, and evaluate Machine Learning Engineers on soft skills, behavioral rounds, and math/stats aptitude."
+
+modules:
+  - id: "module_1"
+    name: "Core Soft Skills & Business Acumen"
+    type: "soft_skills"
+    description: "Managing expectations, translating math to money, and cross-functional empathy."
+    sequence:
+      - topic: "Translating Tech to Business"
+        kb_tags: ["soft_skills", "business_impact", "explaining_models"]
+      - topic: "Pragmatism & Knowing When Not to Use ML"
+        kb_tags: ["soft_skills", "heuristics", "pragmatism"]
+      - topic: "Cross-Functional Collaboration"
+        kb_tags: ["soft_skills", "data_engineering", "mlops", "empathy"]
+
+  - id: "module_2"
+    name: "Behavioral Interview Rounds (MLE Specific)"
+    type: "interview"
+    description: "Handling trade-offs, model failures, and project ambiguity using the STAR(M) method."
+    sequence:
+      - topic: "Model Failure & Debugging in Production"
+        kb_tags: ["interview", "model_degradation", "data_drift", "debugging"]
+      - topic: "Trade-offs & Engineering Judgment"
+        kb_tags: ["interview", "accuracy_vs_latency", "trade_offs"]
+      - topic: "Rejecting Bad ML Ideas"
+        kb_tags: ["interview", "pushback", "managing_expectations"]
+
+  - id: "module_3"
+    name: "Probability & Statistics Aptitude"
+    type: "aptitude"
+    description: "Crucial stats and probability foundations for model evaluation and data distributions."
+    sequence:
+      - topic: "Probability Foundations & Distributions"
+        kb_tags: ["aptitude", "stats", "bayes_theorem", "distributions"]
+      - topic: "Statistical Inference"
+        kb_tags: ["aptitude", "stats", "hypothesis_testing", "p_values", "clt"]
+      - topic: "ML Specific Statistics"
+        kb_tags: ["aptitude", "stats", "mle", "bias_variance", "covariance"]
+
+  - id: "module_4"
+    name: "Math & ML Fundamentals"
+    type: "aptitude"
+    description: "Linear algebra, calculus for optimization, and basic ML algorithms."
+    sequence:
+      - topic: "Linear Algebra"
+        kb_tags: ["aptitude", "math", "matrices", "svd", "pca"]
+      - topic: "Calculus & Optimization"
+        kb_tags: ["aptitude", "math", "derivatives", "gradient_descent", "regularization"]
+      - topic: "Evaluation Metrics & Fundamentals"
+        kb_tags: ["aptitude", "ml", "metrics", "roc_auc", "overfitting"]
