@@ -1,0 +1,60 @@
+name: "Software Engineer Aptitude and Interview Curriculum"
+version: "1.0"
+description: "Progressive sequence of topics for Agent 2 to teach, test, and evaluate Software Engineers on soft skills, behavioral rounds, and aptitude tests."
+
+modules:
+  - id: "module_1"
+    name: "Core Soft Skills"
+    type: "soft_skills"
+    description: "Bridging the gap between complex technical work and human collaboration."
+    sequence:
+      - topic: "Technical Communication & Documentation"
+        kb_tags: ["soft_skills", "documentation", "pr_descriptions"]
+      - topic: "Stakeholder Management"
+        kb_tags: ["soft_skills", "stakeholders", "active_listening"]
+      - topic: "Team Dynamics & Collaboration"
+        kb_tags: ["soft_skills", "agile", "conflict_resolution"]
+      - topic: "Professional Effectiveness"
+        kb_tags: ["soft_skills", "time_management", "ownership"]
+
+  - id: "module_2"
+    name: "Behavioral Interview Preparation"
+    type: "interview"
+    description: "Structuring past experiences using the STAR method to pass culture fit and leadership rounds."
+    sequence:
+      - topic: "STAR Method & Story Bank"
+        kb_tags: ["interview", "star_method", "story_bank"]
+      - topic: "Navigating Technical Disagreements"
+        kb_tags: ["interview", "conflict_resolution", "disagree_and_commit"]
+      - topic: "Handling Technical Debt vs Feature Delivery"
+        kb_tags: ["interview", "technical_debt", "trade_offs"]
+      - topic: "Dealing with Ambiguity & Failures"
+        kb_tags: ["interview", "ambiguity", "post_mortem", "accountability"]
+
+  - id: "module_3"
+    name: "Quantitative & Logical Aptitude"
+    type: "aptitude"
+    description: "Speed and accuracy in solving math, numbers, and logical puzzles."
+    sequence:
+      - topic: "Numerical Ability & Algebra"
+        kb_tags: ["aptitude", "math", "equations", "percentages"]
+      - topic: "Time, Speed & Distance"
+        kb_tags: ["aptitude", "math", "speed_distance", "time_work"]
+      - topic: "Deductive & Relational Logic"
+        kb_tags: ["aptitude", "logic", "syllogisms", "blood_relations"]
+      - topic: "Pattern Recognition & Puzzles"
+        kb_tags: ["aptitude", "logic", "number_series", "puzzles"]
+
+  - id: "module_4"
+    name: "Verbal & Technical Aptitude"
+    type: "aptitude"
+    description: "English comprehension and fundamental computer science screening."
+    sequence:
+      - topic: "Verbal Ability & Grammar"
+        kb_tags: ["aptitude", "verbal", "reading_comprehension", "grammar"]
+      - topic: "Programming Fundamentals & Pseudocode"
+        kb_tags: ["aptitude", "technical", "pseudocode", "syntax"]
+      - topic: "Data Structures & Algorithms Basics"
+        kb_tags: ["aptitude", "technical", "dsa", "time_complexity"]
+      - topic: "CS Core Subjects"
+        kb_tags: ["aptitude", "technical", "os", "oop", "dbms", "networking"]
