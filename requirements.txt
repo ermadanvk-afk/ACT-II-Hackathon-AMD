@@ -1,8 +1,9 @@
-crewai
-crewai_tools
-pyyaml
-langchain
-python-dotenv
-openai
-fastapi
-uvicorn
+crewai>=1.15.0
+crewai_tools>=0.1.0
+pyyaml>=6.0
+langchain>=0.2.0
+python-dotenv>=1.0.0
+openai>=1.0.0
+fastapi>=0.111.0
+uvicorn>=0.30.0
+websockets>=12.0

@@ -11,15 +11,15 @@ class PrepCrew:
 
         # Dynamically route to the correct curriculum and knowledge base folder based on the role!
         if role_profile == "Data Analyst":
-            self.curriculum_path = os.path.join(self.base_dir, "Cirriculum", "da_curriculum.yaml")
+            self.curriculum_path = os.path.join(self.base_dir, "Curriculum", "da_Curriculum.yaml")
             self.kb_dirs = [os.path.join(self.base_dir, "knowledge_base_DA")]
             
         elif role_profile == "Software Engineer":
-            self.curriculum_path = os.path.join(self.base_dir, "Cirriculum", "y.yaml") # (Using your y.yaml file)
+            self.curriculum_path = os.path.join(self.base_dir, "Curriculum", "swe_Curriculum.yaml")
             self.kb_dirs = [os.path.join(self.base_dir, "knowledge_base_SWE")]
             
         elif role_profile == "Machine Learning Engineer":
-            self.curriculum_path = os.path.join(self.base_dir, "Cirriculum", "x.yaml") # (Using your x.yaml file)
+            self.curriculum_path = os.path.join(self.base_dir, "Curriculum", "ml_Curriculum.yaml")
             self.kb_dirs = [os.path.join(self.base_dir, "knowledge_base_ML")]
             
         else:
@@ -65,11 +65,31 @@ class PrepCrew:
         return result
 
 if __name__ == "__main__":
-    # Example Usage:
-    prep_crew = PrepCrew()
-    print("=== Starting Aptitude Generation ===")
+    print("=== Welcome to the Prep Agent Mentor ===")
+    print("Roles available: [1] Data Analyst, [2] Software Engineer, [3] Machine Learning Engineer")
+    role_choice = input("Enter the number for your target role: ").strip()
     
-    # We simulate the first loop where we just ask for a question on a topic
-    # topic = "Percentages & Growth Rates"
-    # output = prep_crew.run_aptitude_cycle(topic_name=topic, difficulty="Medium")
-    # print(output)
+    role_map = {
+        "1": "Data Analyst",
+        "2": "Software Engineer",
+        "3": "Machine Learning Engineer"
+    }
+    role_profile = role_map.get(role_choice, "Software Engineer")
+    
+    print(f"\\nSetting up your profile for: {role_profile}...")
+    prep_crew = PrepCrew(role_profile)
+    
+    # "First day dose" topic mapping
+    topic_map = {
+        "Data Analyst": "Percentages & Growth Rates",
+        "Software Engineer": "Arrays and Strings",
+        "Machine Learning Engineer": "Linear Algebra Basics"
+    }
+    first_topic = topic_map.get(role_profile, "General Aptitude")
+    
+    print(f"\\n[AI] Your first day dose is starting! Generating an aptitude MCQ for topic: '{first_topic}' (Difficulty: Medium)\\n")
+    
+    output = prep_crew.run_aptitude_cycle(topic_name=first_topic, difficulty="Medium")
+    
+    print("\\n=== AI GENERATED MCQ (JSON) ===")
+    print(output)
