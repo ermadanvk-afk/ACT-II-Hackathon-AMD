@@ -60,7 +60,7 @@ class ScheduleUpdateRequest(BaseModel):
     status: str
 
 @app.post("/api/next-action")
-async def get_next_action(request: OrchestratorRequest):
+def get_next_action(request: OrchestratorRequest):
     """
     The Master Router. The frontend calls this to figure out what the user should do next.
     """
@@ -127,7 +127,7 @@ async def get_next_action(request: OrchestratorRequest):
     raise HTTPException(status_code=400, detail="Unknown phase requested.")
 
 @app.get("/api/schedule/{role}")
-async def get_schedule(role: str):
+def get_schedule(role: str):
     """
     Fetch the 30-day schedule for a specific role (SWE, DA, ML).
     """
@@ -154,7 +154,7 @@ async def get_schedule(role: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/schedule/update")
-async def update_schedule(request: ScheduleUpdateRequest):
+def update_schedule(request: ScheduleUpdateRequest):
     """
     Update the status of a specific day's task (e.g., 'completed').
     """
@@ -181,7 +181,7 @@ async def update_schedule(request: ScheduleUpdateRequest):
 
 
 @app.post("/api/run-aptitude")
-async def run_aptitude(request: AptitudeRequest):
+def run_aptitude(request: AptitudeRequest):
     """
     Endpoint to trigger Agent 2's CrewAI logic synchronously.
     """
@@ -205,7 +205,7 @@ class TechRequest(BaseModel):
     difficulty: str
 
 @app.post("/api/run-tech")
-async def run_tech(request: TechRequest):
+def run_tech(request: TechRequest):
     """
     Endpoint to trigger Agent 1's Tech Practice logic synchronously.
     """
