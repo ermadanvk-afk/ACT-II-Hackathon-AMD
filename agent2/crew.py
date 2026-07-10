@@ -1,7 +1,7 @@
 import os
 from crewai import Crew, Process
-from agents import PrepAgents
-from tasks import PrepTasks
+from agent2.agents import PrepAgents
+from agent2.tasks import PrepTasks
 
 class PrepCrew:
     def __init__(self, role_profile: str):

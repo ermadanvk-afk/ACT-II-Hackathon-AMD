@@ -1,6 +1,6 @@
 import os
 from crewai import Agent
-from tools import CurriculumReaderTool, KnowledgeBaseSearchTool
+from agent2.tools import CurriculumReaderTool, KnowledgeBaseSearchTool
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -1,6 +1,6 @@
 from crewai import Crew
-from tasks.resource_task import resource_task
-from agents.resource_agent import resource_agent
+from agent1.tasks.resource_task import resource_task
+from agent1.agents.resource_agent import resource_agent
 
 crew = Crew(
     agents=[resource_agent],
