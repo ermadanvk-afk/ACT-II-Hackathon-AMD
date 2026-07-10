@@ -1,0 +1,9 @@
+crewai
+crewai[google-genai]
+crewai-tools
+fastapi
+uvicorn
+python-dotenv
+httpx
+aiosqlite
+litellm

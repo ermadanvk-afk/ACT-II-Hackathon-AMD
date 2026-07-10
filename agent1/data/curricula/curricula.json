@@ -1,0 +1,340 @@
+{
+  "career_tracks": {
+    "Software Development Engineer": {
+      "beginner": {
+        "Programming Fundamentals": [
+          "C++/Java/Python",
+          "Variables & Data Types",
+          "Loops & Functions",
+          "Pointers/References",
+          "Object-Oriented Programming",
+          "Exception Handling",
+          "STL/Collections"
+        ],
+        "Problem Solving": [
+          "Arrays",
+          "Strings",
+          "Sorting",
+          "Searching",
+          "Two Pointers",
+          "Sliding Window",
+          "Prefix Sum",
+          "Hash Maps",
+          "Recursion",
+          "Basic Backtracking"
+        ],
+        "Mathematics": [
+          "Time Complexity",
+          "Space Complexity",
+          "Basic Number Theory",
+          "Combinatorics Basics"
+        ],
+        "Tools": [
+          "Git",
+          "GitHub",
+          "VS Code",
+          "Linux Basics",
+          "Command Line"
+        ]
+      },
+
+      "intermediate": {
+        "Data Structures": [
+          "Linked Lists",
+          "Stacks",
+          "Queues",
+          "Trees",
+          "Binary Search Trees",
+          "Heaps",
+          "Tries",
+          "Graphs",
+          "Disjoint Set Union"
+        ],
+        "Algorithms": [
+          "DFS",
+          "BFS",
+          "Shortest Paths",
+          "Topological Sort",
+          "Minimum Spanning Tree",
+          "Greedy",
+          "Dynamic Programming",
+          "Binary Search on Answer",
+          "Bit Manipulation"
+        ],
+        "Computer Science": [
+          "Operating Systems",
+          "Computer Networks",
+          "Database Management Systems",
+          "SQL",
+          "Concurrency Basics"
+        ],
+        "Development": [
+          "REST APIs",
+          "HTTP",
+          "JSON",
+          "Authentication",
+          "JWT",
+          "OAuth",
+          "MVC Architecture"
+        ],
+        "Frontend": [
+          "HTML",
+          "CSS",
+          "JavaScript",
+          "TypeScript",
+          "React"
+        ],
+        "Backend": [
+          "Node.js",
+          "Express",
+          "Spring Boot",
+          "Django",
+          "Flask"
+        ],
+        "Databases": [
+          "MySQL",
+          "PostgreSQL",
+          "MongoDB",
+          "Redis"
+        ]
+      },
+
+      "advanced": {
+        "System Design": [
+          "Scalability",
+          "Load Balancing",
+          "Caching",
+          "CDN",
+          "CAP Theorem",
+          "Replication",
+          "Sharding",
+          "Distributed Transactions",
+          "Rate Limiting",
+          "API Gateway"
+        ],
+        "Distributed Systems": [
+          "Kafka",
+          "RabbitMQ",
+          "Event-Driven Architecture",
+          "Microservices",
+          "Service Discovery"
+        ],
+        "Cloud": [
+          "AWS",
+          "Azure",
+          "GCP",
+          "Serverless",
+          "IAM",
+          "VPC"
+        ],
+        "DevOps": [
+          "Docker",
+          "Kubernetes",
+          "CI/CD",
+          "GitHub Actions",
+          "Terraform"
+        ],
+        "Security": [
+          "HTTPS",
+          "Encryption",
+          "OWASP Top 10",
+          "Secure Coding"
+        ],
+        "Performance": [
+          "Profiling",
+          "Memory Optimization",
+          "Multithreading",
+          "Parallel Computing"
+        ]
+      }
+    },
+
+    "Data Analyst": {
+      "beginner": {
+        "Mathematics": [
+          "Basic Statistics",
+          "Probability",
+          "Linear Algebra Basics"
+        ],
+        "Excel": [
+          "Formulas",
+          "Pivot Tables",
+          "Charts",
+          "Power Query",
+          "Data Cleaning"
+        ],
+        "SQL": [
+          "SELECT",
+          "WHERE",
+          "GROUP BY",
+          "HAVING",
+          "JOINS",
+          "Subqueries"
+        ],
+        "Python": [
+          "NumPy",
+          "Pandas",
+          "File Handling"
+        ]
+      },
+
+      "intermediate": {
+        "Data Analysis": [
+          "EDA",
+          "Feature Engineering",
+          "Missing Value Handling",
+          "Outlier Detection"
+        ],
+        "Visualization": [
+          "Matplotlib",
+          "Seaborn",
+          "Plotly",
+          "Tableau",
+          "Power BI"
+        ],
+        "SQL Advanced": [
+          "CTEs",
+          "Window Functions",
+          "Stored Procedures",
+          "Indexes",
+          "Optimization"
+        ],
+        "Statistics": [
+          "Hypothesis Testing",
+          "A/B Testing",
+          "Confidence Intervals",
+          "Regression Analysis",
+          "ANOVA"
+        ]
+      },
+
+      "advanced": {
+        "Business Intelligence": [
+          "Dashboard Design",
+          "KPIs",
+          "Business Metrics",
+          "Data Storytelling"
+        ],
+        "Big Data": [
+          "Spark",
+          "Hive",
+          "Hadoop"
+        ],
+        "Cloud Analytics": [
+          "BigQuery",
+          "Snowflake",
+          "Redshift",
+          "Azure Synapse"
+        ],
+        "Automation": [
+          "Python Automation",
+          "ETL Pipelines",
+          "Airflow"
+        ],
+        "Analytics Engineering": [
+          "dbt",
+          "Data Warehousing",
+          "Dimensional Modeling"
+        ]
+      }
+    },
+
+    "Machine Learning Engineer": {
+      "beginner": {
+        "Programming": [
+          "Python",
+          "NumPy",
+          "Pandas",
+          "Matplotlib"
+        ],
+        "Mathematics": [
+          "Linear Algebra",
+          "Calculus",
+          "Probability",
+          "Statistics"
+        ],
+        "Data": [
+          "Data Cleaning",
+          "Feature Engineering",
+          "EDA"
+        ]
+      },
+
+      "intermediate": {
+        "Machine Learning": [
+          "Linear Regression",
+          "Logistic Regression",
+          "Decision Trees",
+          "Random Forest",
+          "SVM",
+          "KNN",
+          "Naive Bayes",
+          "Clustering",
+          "PCA"
+        ],
+        "Libraries": [
+          "Scikit-learn",
+          "XGBoost",
+          "LightGBM"
+        ],
+        "Deep Learning": [
+          "Neural Networks",
+          "CNN",
+          "RNN",
+          "LSTM",
+          "Transformers Basics"
+        ],
+        "Frameworks": [
+          "TensorFlow",
+          "PyTorch",
+          "Keras"
+        ]
+      },
+
+      "advanced": {
+        "Generative AI": [
+          "LLMs",
+          "Prompt Engineering",
+          "RAG",
+          "Vector Databases",
+          "Fine-Tuning",
+          "LoRA",
+          "RLHF"
+        ],
+        "MLOps": [
+          "MLflow",
+          "Kubeflow",
+          "Docker",
+          "Kubernetes",
+          "CI/CD",
+          "Model Registry"
+        ],
+        "Data Engineering": [
+          "Spark",
+          "Kafka",
+          "Airflow",
+          "Feature Store"
+        ],
+        "Deployment": [
+          "FastAPI",
+          "ONNX",
+          "TorchServe",
+          "TensorRT",
+          "Triton Inference Server"
+        ],
+        "Cloud ML": [
+          "AWS SageMaker",
+          "Vertex AI",
+          "Azure ML"
+        ],
+        "Research": [
+          "Attention Mechanism",
+          "Diffusion Models",
+          "GANs",
+          "Self-Supervised Learning",
+          "Graph Neural Networks"
+        ]
+      }
+    }
+  }
+}
