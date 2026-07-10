@@ -4,3 +4,6 @@ pyyaml>=6.0
 langchain>=0.2.0
 python-dotenv>=1.0.0
 openai>=1.0.0
+fastapi>=0.111.0
+uvicorn>=0.30.0
+websockets>=12.0
