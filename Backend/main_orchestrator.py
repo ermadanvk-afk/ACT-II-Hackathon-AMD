@@ -1,7 +1,11 @@
 import os
 import sys
 import asyncio
-from fastapi import FastAPI, HTTPException
+import sqlite3
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
 # Inject the parent directory into sys.path so we can import agent1 and agent2 without path conflicts
@@ -26,6 +30,37 @@ except ImportError:
     PrepCrew = None
 
 app = FastAPI(title="Principal Orchestrator")
+
+try:
+    from database.db_setup import init_db
+except ImportError:
+    from Backend.database.db_setup import init_db
+from sqlite3 import IntegrityError
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
+# Make sure CORS headers appear even on unhandled 500 errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )
 
 # Mount the WebSocket endpoint from agent2
 # This ensures everything runs under ONE single server and port!
@@ -122,6 +157,151 @@ async def run_tech(request: TechRequest):
         return {"status": "success", "tech_data": output}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- Authentication & Database Endpoints ---
+
+DB_PATH = os.path.join(current_dir, "database", "app.db")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
+# Import auth utilities directly (assuming Backend is in sys.path or we can use relative)
+try:
+    from auth import verify_password, get_password_hash, create_access_token, decode_access_token
+except ImportError:
+    from Backend.auth import verify_password, get_password_hash, create_access_token, decode_access_token
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: sqlite3.Connection = Depends(get_db)):
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return dict(user)
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/register")
+def register(user: UserCreate, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = ?", (user.username,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    hashed_pw = get_password_hash(user.password)
+    cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (user.username, hashed_pw))
+    db.commit()
+    return {"message": "User created successfully"}
+
+@app.post("/api/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (form_data.username,))
+    user = cursor.fetchone()
+    
+    if not user or not verify_password(form_data.password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    access_token = create_access_token(data={"sub": user["username"]})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/me")
+def get_me(current_user: dict = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
+    # Fetch user journeys
+    cursor = db.cursor()
+    cursor.execute("SELECT role, level, current_day FROM user_journeys WHERE user_id = ?", (current_user["id"],))
+    journeys = [dict(row) for row in cursor.fetchall()]
+    return {"username": current_user["username"], "journeys": journeys}
+
+class JourneyUpdate(BaseModel):
+    role: str
+    level: str
+    current_day: int = 1
+
+@app.post("/api/journey/update")
+def update_journey(journey: JourneyUpdate, current_user: dict = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM user_journeys WHERE user_id = ? AND role = ? AND level = ?", 
+                   (current_user["id"], journey.role, journey.level))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("UPDATE user_journeys SET current_day = ? WHERE id = ?", (journey.current_day, existing["id"]))
+    else:
+        cursor.execute("INSERT INTO user_journeys (user_id, role, level, current_day) VALUES (?, ?, ?, ?)", 
+                       (current_user["id"], journey.role, journey.level, journey.current_day))
+    db.commit()
+    return {"message": "Journey updated successfully"}
+
+@app.delete("/api/journey/reset")
+def reset_journey(role: str, level: str, current_user: dict = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM user_journeys WHERE user_id = ? AND role = ? AND level = ?", 
+                   (current_user["id"], role, level))
+    db.commit()
+    return {"message": f"Journey reset for {role} - {level}"}
+
+@app.get("/api/schedule/{role}")
+def get_schedule(role: str, level: str = "Beginner"):
+    """
+    Return the 30-day schedule for a given role and level.
+    
+    Query params:
+      - role  (path):  e.g. "Software Engineer", "Data Analyst", "Machine Learning Engineer"
+      - level (query): "Beginner" | "Intermediate" | "Advanced"  (default: Beginner)
+    """
+    role_map = {
+        "Software Development Engineer": "SWE",
+        "Software Engineer":             "SWE",
+        "Data Analyst":                  "DA",
+        "Machine Learning Engineer":     "ML",
+    }
+    valid_levels = {"Beginner", "Intermediate", "Advanced"}
+
+    short_role = role_map.get(role)
+    if not short_role:
+        raise HTTPException(status_code=400, detail=f"Invalid role '{role}'. Valid roles: {list(role_map.keys())}")
+
+    # Normalize level casing
+    level = level.capitalize()
+    if level not in valid_levels:
+        raise HTTPException(status_code=400, detail=f"Invalid level '{level}'. Valid levels: {list(valid_levels)}")
+
+    schedule_db_path = os.path.join(current_dir, "database", "scheduler.db")
+    if not os.path.exists(schedule_db_path):
+        raise HTTPException(status_code=500, detail="Schedule database not found. Run seed_scheduler.py first.")
+
+    conn = sqlite3.connect(schedule_db_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    table_name = f"Schedule_{short_role}_{level}"
+    try:
+        cursor.execute(f"SELECT * FROM {table_name} ORDER BY day ASC")
+        schedule = [dict(row) for row in cursor.fetchall()]
+        return {"role": role, "level": level, "schedule": schedule}
+    except sqlite3.OperationalError:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Table '{table_name}' not found. Re-run seed_scheduler.py to regenerate the database."
+        )
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     import uvicorn
