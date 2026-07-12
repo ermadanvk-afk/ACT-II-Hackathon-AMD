@@ -323,12 +323,14 @@ def run_interview(request: InterviewRequest, db: sqlite3.Connection = Depends(ge
     }
 
 
+from typing import Optional
+
 class CompleteDayRequest(BaseModel):
     role: str
     level: str
     completed_day: int
-    interview_summary: str = None
-    topic: str = None
+    interview_summary: Optional[str] = None
+    topic: Optional[str] = None
 
 @app.post("/api/complete-day")
 def complete_day(
@@ -480,6 +482,33 @@ def get_schedule(role: str, level: str = "Beginner"):
         )
     finally:
         conn.close()
+
+# ─── FRONTEND SERVING (For Single-Container Deployment) ───────────
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+frontend_dist = os.path.join(parent_dir, "frontend", "dist")
+if os.path.exists(frontend_dist):
+    # Mount the assets folder separately so Vite's chunk loading works perfectly
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        
+    # Catch-all route for the React Single Page Application
+    @app.get("/{catchall:path}")
+    def serve_react_app(catchall: str):
+        # Ignore api and ws routes
+        if catchall.startswith("api/") or catchall.startswith("ws/"):
+            raise HTTPException(status_code=404, detail="Not found")
+            
+        # If they are requesting a specific file (like favicon.ico), serve it
+        file_path = os.path.join(frontend_dist, catchall)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        # Otherwise, serve the React router fallback
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+
 
 if __name__ == "__main__":
     import uvicorn

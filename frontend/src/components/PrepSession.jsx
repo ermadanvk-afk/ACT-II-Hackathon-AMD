@@ -9,7 +9,7 @@ import InterviewResultView from './InterviewResultView';
 
 const PrepSession = () => {
   const { role, level } = useParams();
-  const { user, api } = useContext(AuthContext);
+  const { user, api, checkAuth } = useContext(AuthContext);
 
   const [schedule, setSchedule] = useState([]);
   const [loadingSchedule, setLoadingSchedule] = useState(true);
@@ -128,6 +128,10 @@ const PrepSession = () => {
         interview_summary: typeof interviewSummary === 'string' ? interviewSummary : null,
         topic: activeDay.topic
       });
+      
+      // Update global context so the user journey reflects the new current_day
+      await checkAuth();
+      
       setCurrentDay(res.data.next_day);
       // Reset back to roadmap so user sees next day unlocked
       setSessionState('idle');
