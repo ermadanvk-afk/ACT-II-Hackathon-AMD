@@ -210,11 +210,17 @@ async def run_aptitude(request: AptitudeRequest, db: sqlite3.Connection = Depend
             topic_name=request.topic_name,
             difficulty=request.difficulty
         )
-        raw = str(output.raw if hasattr(output, "raw") else output)
+        raw = str(output.raw if hasattr(output, "raw") else output).strip()
+        
+        # Aggressively strip markdown JSON block wrappers that LLMs often include
+        import re
+        clean_raw = re.sub(r'^```(?:json)?', '', raw, flags=re.IGNORECASE).strip()
+        clean_raw = re.sub(r'```$', '', clean_raw).strip()
+        
         try:
-            mcq = _json.loads(raw)
+            mcq = _json.loads(clean_raw)
         except Exception:
-            mcq = raw
+            mcq = clean_raw
 
         # ── Save to cache ────────────────────────────────────────
         if request.day > 0:
@@ -431,11 +437,17 @@ def update_journey(journey: JourneyUpdate, current_user: dict = Depends(get_curr
 @app.delete("/api/journey/reset")
 def reset_journey(role: str, level: str, current_user: dict = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
+    # 1. Reset progress back to Day 1 by deleting the journey tracking row
     cursor.execute("DELETE FROM user_journeys WHERE user_id = ? AND role = ? AND level = ?", 
                    (current_user["id"], role, level))
+                   
+    # 2. Vanish all cached AI generations for this user + role
+    # This ensures that when they restart, the AI generates fresh new questions!
+    cursor.execute("DELETE FROM session_cache WHERE user_id = ? AND role = ?", 
+                   (current_user["id"], role))
+                   
     db.commit()
-    return {"message": f"Journey reset for {role} - {level}"}
-
+    return {"message": f"Journey and cache completely vanished for {role} - {level}"}
 @app.get("/api/schedule/{role}")
 def get_schedule(role: str, level: str = "Beginner"):
     """
