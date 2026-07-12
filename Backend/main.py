@@ -61,3 +61,8 @@ def evaluate_quiz(request: QuizEvaluateRequest):
         return {"result": str(result)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+if __name__ == "__main__":
+    import uvicorn
+    # This single server now hosts the Orchestrator APIs AND the Live Voice WebSocket!
+    uvicorn.run(app, host="localhost", port=8000)
