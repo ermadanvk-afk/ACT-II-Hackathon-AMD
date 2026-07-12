@@ -7,9 +7,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Axios instance with base URL
+  // Axios instance — baseURL is empty so requests go through Vite's proxy (/api/* → :8000)
+  // VITE_API_URL can override this for production deployments.
   const api = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: import.meta.env.VITE_API_URL || '',
   });
 
   // Interceptor to attach JWT

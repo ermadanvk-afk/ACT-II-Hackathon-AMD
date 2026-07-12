@@ -25,6 +25,42 @@ const PrepSession = () => {
     fetchSchedule();
   }, [role, level, api]);
 
+  const handleStart = async (dayObj) => {
+    try {
+      const orchestratorPayload = {
+        user_id: user.username,
+        target_role: role,
+        current_phase: dayObj.phase.toLowerCase(),
+        topic_name: dayObj.topic,
+        difficulty: dayObj.difficulty
+      };
+      
+      console.log("Sending Orchestrator Request:", orchestratorPayload);
+      const res = await api.post('/api/next-action', orchestratorPayload);
+      const { action, endpoint, websocket_url, message } = res.data;
+      
+      console.log(`Action determined: ${action} - ${message}`);
+      
+      if (action === "RUN_TECH_PRACTICE") {
+        alert("Starting Tech Agent!");
+        // The orchestrator gives us the endpoint to hit next
+        const techRes = await api.post(endpoint, orchestratorPayload);
+        console.log("Tech Result:", techRes.data);
+      } else if (action === "RUN_APTITUDE_PRACTICE") {
+        alert("Starting Aptitude Agent!");
+        const aptRes = await api.post(endpoint, orchestratorPayload);
+        console.log("Aptitude Result:", aptRes.data);
+      } else if (action === "START_MOCK_INTERVIEW") {
+        alert(`Connecting to Live Video Interview Agent at ${websocket_url}`);
+        // Connect UI components to this WebSocket URL here
+      }
+    } catch (err) {
+      console.error("Failed to start session", err);
+      const detail = err?.response?.data?.detail || err?.message || "Unknown error";
+      alert(`Error starting session: ${detail}`);
+    }
+  };
+
   // Find the current day for this user's journey
   const journey = user?.journeys?.find(j => j.role === role && j.level === level);
   const currentDay = journey ? journey.current_day : 1;
@@ -65,7 +101,7 @@ const PrepSession = () => {
               <div>
                 {isPast && <span style={{color: 'var(--accent-da)'}}>Completed</span>}
                 {isCurrent && (
-                  <button className="btn btn-primary">
+                  <button className="btn btn-primary" onClick={() => handleStart(dayObj)}>
                     <PlayCircle size={18} /> Start
                   </button>
                 )}

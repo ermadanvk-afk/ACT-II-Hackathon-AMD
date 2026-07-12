@@ -1,8 +1,8 @@
 from crewai import Agent
-from config.llm_config import llm
-from tools.web_access_tool import webaccess
-from tools.curriculum_tool import curriculumaccess
-from tools.database_tool import database_interact
+from agent1.config.llm_config import llm
+from agent1.tools.web_access_tool import webaccess
+from agent1.tools.curriculum_tool import curriculumaccess
+from agent1.tools.database_tool import database_interact
 
 resource_agent = Agent(
     role="Resource Gatherer",

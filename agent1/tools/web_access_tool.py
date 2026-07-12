@@ -6,7 +6,7 @@ import asyncio
 import httpx
 from crewai.tools import tool
 from crewai_tools import SerperDevTool, ScrapeWebsiteTool
-from tools.utils import extract_first_url
+from agent1.tools.utils import extract_first_url
 
 async def search_github(client: httpx.AsyncClient, topic: str, role: str) -> str:
     query = f"{topic} {role} roadmap OR interview OR notes"

@@ -20,7 +20,10 @@ from agent2.interview_server import interview_endpoint
 # Attempt to import the Tech Crew (agent1)
 try:
     from agent1.main import crew as tech_crew_instance
-except ImportError:
+except Exception as e:
+    print("FAILED TO IMPORT AGENT 1:", e)
+    import traceback
+    traceback.print_exc()
     tech_crew_instance = None
 
 # Attempt to import the Aptitude Crew (agent2)
@@ -43,7 +46,7 @@ def startup_event():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=os.getenv("FRONTEND_URL", "http://localhost:5173").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,6 +73,8 @@ class OrchestratorRequest(BaseModel):
     user_id: str
     target_role: str
     current_phase: str  # e.g., "tech", "aptitude", "mock_interview"
+    topic_name: str = "General"
+    difficulty: str = "Beginner"
 
 class AptitudeRequest(BaseModel):
     target_role: str
@@ -104,10 +109,11 @@ async def get_next_action(request: OrchestratorRequest):
         safe_role = quote(request.target_role)
         safe_topic = quote(request.topic_name) if hasattr(request, 'topic_name') else "General"
         
+        ws_base = os.getenv("WS_BASE_URL", "ws://localhost:8000")
         return {
             "action": "START_MOCK_INTERVIEW",
             "message": "Transitioning to Live Video Call.",
-            "websocket_url": f"ws://localhost:8000/ws/interview?role={safe_role}&topic={safe_topic}" 
+            "websocket_url": f"{ws_base}/ws/interview?role={safe_role}&topic={safe_topic}" 
         }
         
     raise HTTPException(status_code=400, detail="Unknown phase requested.")
@@ -116,15 +122,17 @@ async def get_next_action(request: OrchestratorRequest):
 @app.post("/api/run-aptitude")
 async def run_aptitude(request: AptitudeRequest):
     """
-    Endpoint to trigger Agent 2's CrewAI logic synchronously.
+    Endpoint to trigger Agent 2's CrewAI logic.
+    Uses asyncio.to_thread so the sync crew.kickoff() doesn't block the event loop.
     """
     if not PrepCrew:
         raise HTTPException(status_code=500, detail="Agent 2 Crew not found.")
         
     try:
         prep_crew = PrepCrew(role_profile=request.target_role)
-        output = prep_crew.run_aptitude_cycle(
-            topic_name=request.topic_name, 
+        output = await asyncio.to_thread(
+            prep_crew.run_aptitude_cycle,
+            topic_name=request.topic_name,
             difficulty=request.difficulty
         )
         return {"status": "success", "mcq_data": output}
@@ -140,7 +148,8 @@ class TechRequest(BaseModel):
 @app.post("/api/run-tech")
 async def run_tech(request: TechRequest):
     """
-    Endpoint to trigger Agent 1's Tech Practice logic synchronously.
+    Endpoint to trigger Agent 1's Tech Practice logic.
+    Uses asyncio.to_thread so the sync crew.kickoff() doesn't block the event loop.
     """
     if not tech_crew_instance:
         raise HTTPException(status_code=500, detail="Agent 1 Crew not found.")
@@ -148,14 +157,19 @@ async def run_tech(request: TechRequest):
     try:
         # Agent 1 uses slightly different naming (role, topic, level)
         # The Orchestrator handles mapping these variables so the frontend doesn't have to!
-        output = tech_crew_instance.kickoff(inputs={
-            "user_id": request.user_id,
-            "role": request.target_role,
-            "topic": request.topic_name,
-            "level": request.difficulty
-        })
+        output = await asyncio.to_thread(
+            tech_crew_instance.kickoff,
+            inputs={
+                "user_id": request.user_id,
+                "role": request.target_role,
+                "topic": request.topic_name,
+                "level": request.difficulty
+            }
+        )
         return {"status": "success", "tech_data": output}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Authentication & Database Endpoints ---
@@ -306,4 +320,5 @@ def get_schedule(role: str, level: str = "Beginner"):
 if __name__ == "__main__":
     import uvicorn
     # This single server now hosts the Orchestrator APIs AND the Live Voice WebSocket!
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("Backend.main_orchestrator:app", host="localhost", reload=True, port=port)

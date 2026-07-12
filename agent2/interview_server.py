@@ -119,5 +119,6 @@ async def interview_endpoint(websocket: WebSocket, role: str = "Software Enginee
 
 if __name__ == "__main__":
     import uvicorn
-    # Run the server on port 8000
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Run the server on port 8000 (default) or environment variable
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

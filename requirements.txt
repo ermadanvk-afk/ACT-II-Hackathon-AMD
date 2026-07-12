@@ -9,4 +9,5 @@ uvicorn>=0.30.0
 websockets>=12.0
 httpx
 aiosqlite
-litellm
+pyjwt
+passlib

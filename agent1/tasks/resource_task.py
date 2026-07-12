@@ -1,5 +1,5 @@
 from crewai import Task
-from agents.resource_agent import resource_agent
+from agent1.agents.resource_agent import resource_agent
 
 resource_task = Task(
     description=(

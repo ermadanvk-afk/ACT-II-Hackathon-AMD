@@ -17,10 +17,14 @@ def _patched_call(self, messages, *args, **kwargs):
     return _orig_call(self, messages, *args, **kwargs)
 LLM.call = _patched_call
 
-# Initialize the Fireworks API natively
+# Initialize the Fireworks API via OpenAI-compatible endpoint (no LiteLLM needed).
+# Passing provider="openai" explicitly bypasses CrewAI's model-constants validation
+# and routes directly to the native OpenAI SDK pointed at Fireworks' base URL.
 fireworks_llm = LLM(
-    model="fireworks_ai/accounts/fireworks/models/minimax-m3",
-    api_key=os.getenv("FIREWORKS_API_KEY")
+    model="accounts/fireworks/models/minimax-m3",
+    provider="openai",
+    api_key=os.getenv("FIREWORKS_API_KEY"),
+    base_url="https://api.fireworks.ai/inference/v1"
 )
 
 # We initialize the tools here so they can be assigned to the agents
