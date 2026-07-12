@@ -1,6 +1,6 @@
 import os
 from crewai import Agent, LLM
-from tools import CurriculumReaderTool, KnowledgeBaseSearchTool
+from agent2.tools import CurriculumReaderTool, KnowledgeBaseSearchTool
 from dotenv import load_dotenv
 
 # Use a relative path to load the .env file from the root directory
@@ -35,11 +35,12 @@ class PrepAgents:
     def quizmaster_agent(self):
         return Agent(
             role="Technical Quizmaster",
-            goal="Generate highly relevant, dynamic Multiple Choice Questions (MCQs) formatted strictly as JSON based on the exact curriculum and current user performance.",
+            goal="Generate a highly relevant, dynamic set of 8 to 10 Multiple Choice Questions (MCQs) formatted strictly as a JSON array based on the exact curriculum and current user performance.",
             backstory=(
                 "You are an elite technical interviewer specializing in evaluating candidates for logic, math, and problem-solving skills. "
                 "You use the provided curriculum to understand what topic to teach, and you search the knowledge base to get the formulas and context. "
-                "You never repeat questions. You generate realistic, real-world data scenarios and frame them as tricky MCQs with 4 options."
+                "You never repeat questions. You generate realistic, real-world data scenarios and frame them as tricky MCQs with 4 options. "
+                "You must always generate exactly 8 to 10 questions covering different aspects of the topic."
             ),
             tools=[curriculum_reader, kb_search],
             verbose=True,

@@ -69,6 +69,40 @@ async def global_exception_handler(request: Request, exc: Exception):
 # This ensures everything runs under ONE single server and port!
 app.add_api_websocket_route("/ws/interview", interview_endpoint)
 
+# --- Authentication & Database Setup ---
+DB_PATH = os.path.join(current_dir, "database", "app.db")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
+# Import auth utilities directly (assuming Backend is in sys.path or we can use relative)
+try:
+    from auth import verify_password, get_password_hash, create_access_token, decode_access_token
+except ImportError:
+    from Backend.auth import verify_password, get_password_hash, create_access_token, decode_access_token
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: sqlite3.Connection = Depends(get_db)):
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return dict(user)
+
+
 class OrchestratorRequest(BaseModel):
     user_id: str
     target_role: str
@@ -77,9 +111,11 @@ class OrchestratorRequest(BaseModel):
     difficulty: str = "Beginner"
 
 class AptitudeRequest(BaseModel):
+    user_id: str
     target_role: str
     topic_name: str
     difficulty: str
+    day: int = 0  # used as cache key
 
 @app.post("/api/next-action")
 async def get_next_action(request: OrchestratorRequest):
@@ -119,15 +155,59 @@ async def get_next_action(request: OrchestratorRequest):
     raise HTTPException(status_code=400, detail="Unknown phase requested.")
 
 
+import json as _json
+
+def _get_cached_session(db, user_id_int: int, role: str, level: str, day: int):
+    """Return cached content string for a session, or None."""
+    cur = db.cursor()
+    cur.execute(
+        "SELECT content FROM session_cache WHERE user_id=? AND role=? AND level=? AND day=?",
+        (user_id_int, role, level, day)
+    )
+    row = cur.fetchone()
+    return row["content"] if row else None
+
+def _save_session_cache(db, user_id_int: int, role: str, level: str, day: int, phase: str, topic: str, content: str):
+    """Upsert session content into session_cache."""
+    cur = db.cursor()
+    cur.execute(
+        """
+        INSERT INTO session_cache (user_id, role, level, day, phase, topic, content)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, role, level, day) DO UPDATE SET content=excluded.content
+        """,
+        (user_id_int, role, level, day, phase, topic, content)
+    )
+    db.commit()
+
+
 @app.post("/api/run-aptitude")
-async def run_aptitude(request: AptitudeRequest):
+async def run_aptitude(request: AptitudeRequest, db: sqlite3.Connection = Depends(get_db)):
     """
-    Endpoint to trigger Agent 2's CrewAI logic.
-    Uses asyncio.to_thread so the sync crew.kickoff() doesn't block the event loop.
+    Trigger Agent 2 (aptitude MCQ). Checks session_cache first — if content exists
+    for this user+day, returns it instantly without re-running the agent.
     """
     if not PrepCrew:
         raise HTTPException(status_code=500, detail="Agent 2 Crew not found.")
-        
+
+    # Resolve user_id integer from username
+    cur = db.cursor()
+    cur.execute("SELECT id FROM users WHERE username=?", (request.user_id,))
+    user_row = cur.fetchone()
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id_int = user_row["id"]
+
+    # ── Check cache ──────────────────────────────────────────────
+    if request.day > 0:
+        cached = _get_cached_session(db, user_id_int, request.target_role, "", request.day)
+        if cached:
+            try:
+                return {"status": "success", "type": "aptitude", "mcq_data": _json.loads(cached), "cached": True}
+            except Exception:
+                return {"status": "success", "type": "aptitude", "mcq_data": cached, "cached": True}
+
+    # ── Run agent ────────────────────────────────────────────────
     try:
         prep_crew = PrepCrew(role_profile=request.target_role)
         output = await asyncio.to_thread(
@@ -135,76 +215,122 @@ async def run_aptitude(request: AptitudeRequest):
             topic_name=request.topic_name,
             difficulty=request.difficulty
         )
-        return {"status": "success", "mcq_data": output}
+        raw = str(output.raw if hasattr(output, "raw") else output)
+        try:
+            mcq = _json.loads(raw)
+        except Exception:
+            mcq = raw
+
+        # ── Save to cache ────────────────────────────────────────
+        if request.day > 0:
+            _save_session_cache(
+                db, user_id_int, request.target_role, "",
+                request.day, "aptitude", request.topic_name,
+                raw if isinstance(mcq, dict) else _json.dumps(mcq)
+            )
+
+        return {"status": "success", "type": "aptitude", "mcq_data": mcq, "cached": False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class TechRequest(BaseModel):
     user_id: str
     target_role: str
     topic_name: str
     difficulty: str
+    day: int = 0  # used as cache key
+
 
 @app.post("/api/run-tech")
-async def run_tech(request: TechRequest):
+async def run_tech(request: TechRequest, db: sqlite3.Connection = Depends(get_db)):
     """
-    Endpoint to trigger Agent 1's Tech Practice logic.
-    Uses asyncio.to_thread so the sync crew.kickoff() doesn't block the event loop.
+    Trigger Agent 1 (tech resources). Checks session_cache first — returns cached
+    content instantly if it exists for this user+day.
     """
     if not tech_crew_instance:
         raise HTTPException(status_code=500, detail="Agent 1 Crew not found.")
-        
+
+    # Resolve user_id integer
+    cur = db.cursor()
+    cur.execute("SELECT id FROM users WHERE username=?", (request.user_id,))
+    user_row = cur.fetchone()
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id_int = user_row["id"]
+
+    # ── Check cache ──────────────────────────────────────────────
+    if request.day > 0:
+        cached = _get_cached_session(db, user_id_int, request.target_role, "", request.day)
+        if cached:
+            return {"status": "success", "type": "tech", "tech_data": cached, "cached": True}
+
+    # ── Run agent ────────────────────────────────────────────────
     try:
-        # Agent 1 uses slightly different naming (role, topic, level)
-        # The Orchestrator handles mapping these variables so the frontend doesn't have to!
         output = await asyncio.to_thread(
             tech_crew_instance.kickoff,
             inputs={
                 "user_id": request.user_id,
                 "role": request.target_role,
                 "topic": request.topic_name,
-                "level": request.difficulty
+                "level": request.difficulty,
             }
         )
-        return {"status": "success", "tech_data": output}
+        raw = str(output.raw if hasattr(output, "raw") else output)
+
+        # ── Save to cache ────────────────────────────────────────
+        if request.day > 0:
+            _save_session_cache(
+                db, user_id_int, request.target_role, "",
+                request.day, "tech", request.topic_name, raw
+            )
+
+        return {"status": "success", "type": "tech", "tech_data": raw, "cached": False}
     except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+class CompleteDayRequest(BaseModel):
+    role: str
+    level: str
+    completed_day: int
+
+
+@app.post("/api/complete-day")
+def complete_day(
+    req: CompleteDayRequest,
+    current_user: dict = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """
+    Mark a day as completed: advances current_day to completed_day + 1
+    so the next module is unlocked.
+    """
+    next_day = req.completed_day + 1
+    cursor = db.cursor()
+    cursor.execute(
+        "SELECT id FROM user_journeys WHERE user_id=? AND role=? AND level=?",
+        (current_user["id"], req.role, req.level)
+    )
+    existing = cursor.fetchone()
+    if existing:
+        cursor.execute(
+            "UPDATE user_journeys SET current_day=? WHERE id=? AND current_day<=?",
+            (next_day, existing["id"], req.completed_day)  # only advance, never regress
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO user_journeys (user_id, role, level, current_day) VALUES (?, ?, ?, ?)",
+            (current_user["id"], req.role, req.level, next_day)
+        )
+    db.commit()
+    return {"message": f"Day {req.completed_day} completed. Day {next_day} is now unlocked.", "next_day": next_day}
+
+
 # --- Authentication & Database Endpoints ---
 
-DB_PATH = os.path.join(current_dir, "database", "app.db")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
-
-# Import auth utilities directly (assuming Backend is in sys.path or we can use relative)
-try:
-    from auth import verify_password, get_password_hash, create_access_token, decode_access_token
-except ImportError:
-    from Backend.auth import verify_password, get_password_hash, create_access_token, decode_access_token
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-def get_current_user(token: str = Depends(oauth2_scheme), db: sqlite3.Connection = Depends(get_db)):
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    username = payload.get("sub")
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
-    
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    return dict(user)
 
 class UserCreate(BaseModel):
     username: str

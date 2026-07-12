@@ -31,9 +31,28 @@ def init_db():
         )
     """)
     
+    # Create Session Cache table — stores AI agent output per user+day
+    # so repeat visits pull from DB instead of re-running the agent.
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS session_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            level TEXT NOT NULL,
+            day INTEGER NOT NULL,
+            phase TEXT NOT NULL,
+            topic TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, role, level, day),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
     conn.commit()
     conn.close()
     print(f"Database initialized at {DB_PATH}")
+
 
 if __name__ == "__main__":
     init_db()

@@ -7,22 +7,24 @@ class PrepTasks:
                 f"You need to teach and test the user on the topic: '{topic_name}'. "
                 f"1. Use the CurriculumReaderTool on '{curriculum_path}' to find the exact kb_tags associated with '{topic_name}'.\n"
                 f"2. Use the KnowledgeBaseSearchTool with those kb_tags and these directories: {kb_dirs} to fetch the theoretical concepts.\n"
-                f"3. Generate a dynamic, real-world scenario question based on the fetched theory. "
+                f"3. Generate 8 to 10 dynamic, real-world scenario questions based on the fetched theory. "
                 f"The question difficulty should be {difficulty}.\n"
-                f"4. Format the output STRICTLY as a valid JSON object representing a Multiple Choice Question (MCQ). Do not include markdown formatting blocks (like ```json) or any other conversational text outside the JSON."
+                f"4. Format the output STRICTLY as a valid JSON array of Multiple Choice Questions (MCQs). Do not include markdown formatting blocks (like ```json) or any other conversational text outside the JSON."
             ),
-            expected_output='''A valid JSON object matching exactly this structure:
-{
-    "question": "The scenario and question text here...",
-    "options": {
-        "A": "Option A text",
-        "B": "Option B text",
-        "C": "Option C text",
-        "D": "Option D text"
-    },
-    "correct_answer": "C",
-    "explanation": "Detailed explanation of why C is correct and others are wrong."
-}''',
+            expected_output='''A valid JSON array containing 8 to 10 objects, matching exactly this structure:
+[
+    {
+        "question": "The scenario and question text here...",
+        "options": {
+            "A": "Option A text",
+            "B": "Option B text",
+            "C": "Option C text",
+            "D": "Option D text"
+        },
+        "correct_answer": "C",
+        "explanation": "Detailed explanation of why C is correct and others are wrong."
+    }
+]''',
             agent=agent
         )
 
