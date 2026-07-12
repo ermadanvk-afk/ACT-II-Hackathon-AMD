@@ -4,6 +4,8 @@ import { AuthContext } from '../context/AuthContext';
 import { PlayCircle, Loader2, CheckCircle2, Database } from 'lucide-react';
 import MCQView from './MCQView';
 import TechResultView from './TechResultView';
+import InterviewView from './InterviewView';
+import InterviewResultView from './InterviewResultView';
 
 const PrepSession = () => {
   const { role, level } = useParams();
@@ -14,10 +16,12 @@ const PrepSession = () => {
   const [currentDay, setCurrentDay] = useState(1);
 
   // Session state machine
-  const [sessionState, setSessionState] = useState('idle'); // idle | loading | mcq | tech | error
+  const [sessionState, setSessionState] = useState('idle'); // idle | loading | mcq | tech | interview | error
   const [activeDay, setActiveDay] = useState(null);
   const [mcqData, setMcqData] = useState(null);
   const [techData, setTechData] = useState(null);
+  const [interviewData, setInterviewData] = useState(null);
+  const [wsUrl, setWsUrl] = useState(null);
   const [isFromCache, setIsFromCache] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [completing, setCompleting] = useState(false);
@@ -46,6 +50,8 @@ const PrepSession = () => {
     setSessionState('loading');
     setMcqData(null);
     setTechData(null);
+    setInterviewData(null);
+    setWsUrl(null);
     setIsFromCache(false);
     setErrorMsg('');
 
@@ -87,8 +93,21 @@ const PrepSession = () => {
         setSessionState('tech');
 
       } else if (action === 'START_MOCK_INTERVIEW') {
-        setErrorMsg('Mock interview coming soon! WebSocket UI is in progress.');
-        setSessionState('error');
+        const interviewRes = await api.post(endpoint, {
+          user_id: user.username,
+          target_role: role,
+          topic_name: dayObj.topic,
+          difficulty: dayObj.difficulty,
+          day: dayObj.day,
+        });
+        setIsFromCache(interviewRes.data.cached === true);
+        if (interviewRes.data.cached) {
+          setInterviewData(interviewRes.data.interview_summary);
+          setSessionState('interview_result');
+        } else {
+          setWsUrl(interviewRes.data.websocket_url);
+          setSessionState('interview');
+        }
       }
     } catch (err) {
       console.error('Session error', err);
@@ -98,7 +117,7 @@ const PrepSession = () => {
     }
   };
 
-  const handleMarkComplete = async () => {
+  const handleMarkComplete = async (interviewSummary = null) => {
     if (!activeDay || completing) return;
     setCompleting(true);
     try {
@@ -106,6 +125,8 @@ const PrepSession = () => {
         role,
         level,
         completed_day: activeDay.day,
+        interview_summary: typeof interviewSummary === 'string' ? interviewSummary : null,
+        topic: activeDay.topic
       });
       setCurrentDay(res.data.next_day);
       // Reset back to roadmap so user sees next day unlocked
@@ -113,6 +134,7 @@ const PrepSession = () => {
       setActiveDay(null);
       setMcqData(null);
       setTechData(null);
+      setWsUrl(null);
     } catch (err) {
       console.error('Failed to mark complete', err);
       alert('Could not mark day as complete: ' + (err?.response?.data?.detail || err.message));
@@ -125,6 +147,7 @@ const PrepSession = () => {
     setActiveDay(null);
     setMcqData(null);
     setTechData(null);
+    setWsUrl(null);
     setErrorMsg('');
   };
 
@@ -200,6 +223,37 @@ const PrepSession = () => {
           onMarkComplete={activeDay?.day === currentDay ? handleMarkComplete : null}
           completing={completing}
         />
+      </div>
+    );
+  }
+
+  // ── INTERVIEW VIEW ──────────────────────────────────────────────
+  if (sessionState === 'interview' && wsUrl) {
+    return (
+      <div className="session-container fade-in">
+        <InterviewView
+          wsUrl={wsUrl}
+          topic={activeDay?.topic}
+          onMarkComplete={activeDay?.day === currentDay ? handleMarkComplete : null}
+          completing={completing}
+        />
+        <button className="btn btn-outline" onClick={handleReset} style={{ alignSelf: 'flex-start', marginTop: '1.5rem' }}>
+          &larr; Exit Interview
+        </button>
+      </div>
+    );
+  }
+
+  if (sessionState === 'interview_result') {
+    return (
+      <div className="session-container fade-in">
+        <InterviewResultView
+          content={interviewData}
+          topic={activeDay?.topic}
+        />
+        <button className="btn btn-outline" onClick={handleReset} style={{ alignSelf: 'flex-start', marginTop: '1.5rem' }}>
+          &larr; Back to Roadmap
+        </button>
       </div>
     );
   }

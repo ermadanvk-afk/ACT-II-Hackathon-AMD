@@ -70,7 +70,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.add_api_websocket_route("/ws/interview", interview_endpoint)
 
 # --- Authentication & Database Setup ---
-DB_PATH = os.path.join(current_dir, "database", "app.db")
+DB_PATH = os.getenv("DATABASE_PATH", os.path.join(current_dir, "database", "app.db"))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 # Import auth utilities directly (assuming Backend is in sys.path or we can use relative)
@@ -140,17 +140,12 @@ async def get_next_action(request: OrchestratorRequest):
         }
         
     elif request.current_phase == "mock_interview":
-        # We pass the role and topic as query parameters so the WebSocket knows what to search the Knowledge Base for!
-        from urllib.parse import quote
-        safe_role = quote(request.target_role)
-        safe_topic = quote(request.topic_name) if hasattr(request, 'topic_name') else "General"
-        
-        ws_base = os.getenv("WS_BASE_URL", "ws://localhost:8000")
         return {
             "action": "START_MOCK_INTERVIEW",
-            "message": "Transitioning to Live Video Call.",
-            "websocket_url": f"{ws_base}/ws/interview?role={safe_role}&topic={safe_topic}" 
+            "message": "Starting Mock Interview.",
+            "endpoint": "/api/run-interview"
         }
+
         
     raise HTTPException(status_code=400, detail="Unknown phase requested.")
 
@@ -288,15 +283,52 @@ async def run_tech(request: TechRequest, db: sqlite3.Connection = Depends(get_db
         return {"status": "success", "type": "tech", "tech_data": raw, "cached": False}
     except Exception as e:
         import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+class InterviewRequest(BaseModel):
+    user_id: str
+    target_role: str
+    topic_name: str
+    difficulty: str
+    day: int = 0
+
+@app.post("/api/run-interview")
+def run_interview(request: InterviewRequest, db: sqlite3.Connection = Depends(get_db)):
+    """
+    Check cache for interview. If not cached, return the websocket url.
+    """
+    cur = db.cursor()
+    cur.execute("SELECT id FROM users WHERE username=?", (request.user_id,))
+    user_row = cur.fetchone()
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    user_id_int = user_row["id"]
+
+    # Check cache
+    if request.day > 0:
+        cached = _get_cached_session(db, user_id_int, request.target_role, request.difficulty, request.day)
+        if cached:
+            return {"status": "success", "cached": True, "interview_summary": cached}
+
+    # Not cached, return websocket url
+    from urllib.parse import quote
+    safe_role = quote(request.target_role)
+    safe_topic = quote(request.topic_name)
+    ws_base = os.getenv("WS_BASE_URL", "ws://localhost:8000")
+    
+    return {
+        "status": "success",
+        "cached": False,
+        "websocket_url": f"{ws_base}/ws/interview?role={safe_role}&topic={safe_topic}"
+    }
 
 
 class CompleteDayRequest(BaseModel):
     role: str
     level: str
     completed_day: int
-
+    interview_summary: str = None
+    topic: str = None
 
 @app.post("/api/complete-day")
 def complete_day(
@@ -325,6 +357,12 @@ def complete_day(
             "INSERT INTO user_journeys (user_id, role, level, current_day) VALUES (?, ?, ?, ?)",
             (current_user["id"], req.role, req.level, next_day)
         )
+    if req.interview_summary and current_user:
+        _save_session_cache(
+            db, current_user["id"], req.role, req.level, req.completed_day, 
+            "mock_interview", req.topic or "General", req.interview_summary
+        )
+
     db.commit()
     return {"message": f"Day {req.completed_day} completed. Day {next_day} is now unlocked.", "next_day": next_day}
 
@@ -422,7 +460,7 @@ def get_schedule(role: str, level: str = "Beginner"):
     if level not in valid_levels:
         raise HTTPException(status_code=400, detail=f"Invalid level '{level}'. Valid levels: {list(valid_levels)}")
 
-    schedule_db_path = os.path.join(current_dir, "database", "scheduler.db")
+    schedule_db_path = os.getenv("SCHEDULE_DB_PATH", os.path.join(current_dir, "database", "scheduler.db"))
     if not os.path.exists(schedule_db_path):
         raise HTTPException(status_code=500, detail="Schedule database not found. Run seed_scheduler.py first.")
 
@@ -447,4 +485,5 @@ if __name__ == "__main__":
     import uvicorn
     # This single server now hosts the Orchestrator APIs AND the Live Voice WebSocket!
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("Backend.main_orchestrator:app", host="localhost", reload=True, port=port)
+    is_prod = os.getenv("ENVIRONMENT", "development") == "production"
+    uvicorn.run("Backend.main_orchestrator:app", host="0.0.0.0", reload=not is_prod, port=port)

@@ -4,7 +4,11 @@ from passlib.context import CryptContext
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-SECRET_KEY = os.getenv("SECRET_KEY", "my_super_secret_key_for_hackathon")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise RuntimeError("SECRET_KEY environment variable is required in production!")
+    SECRET_KEY = "dev_only_insecure_key_do_not_use_in_prod"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days for convenience
 
