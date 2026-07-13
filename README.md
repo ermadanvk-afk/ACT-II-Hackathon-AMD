@@ -2,7 +2,7 @@
 
 > A comprehensive AI-powered platform for personalized interview preparation and career skill development across Software Engineering, Data Analysis, and Machine Learning roles.
 
-**Live Demo:** [https://act-ii-hackathon-amd.vercel.app](https://act-ii-hackathon-amd.vercel.app)
+**Live Demo:** (https://lablab.ai/ai-hackathons/amd-developer-hackathon-act-ii/is-ai-real-or-artificial/prepai)
 
 ## 📋 Overview
 
@@ -552,9 +552,6 @@ This project is part of the ACT-II Hackathon. Usage governed by hackathon terms.
 
 ---
 
-## 👥 Team & Support
-
-**Developers**: [ermadanvk-afk](https://github.com/ermadanvk-afk)
 
 **Questions or Issues?**
 - Open a [GitHub Issue](https://github.com/ermadanvk-afk/ACT-II-Hackathon-AMD/issues)
