@@ -214,7 +214,7 @@ docker run -p 8000:8000 \
 
 **API Endpoints**:
 - `POST /api/run-aptitude` - Generate MCQ
-- WebSocket `/ws/interview` - Live mock interview
+- `POST /ws/interview` - Live mock interview (WebSocket)
 
 **Response (MCQ)**:
 ```json
@@ -391,69 +391,6 @@ curl -X POST http://localhost:8000/api/run-aptitude \
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-### Branch Naming Convention
-
-- `feature/description` - New features
-- `bugfix/description` - Bug fixes
-- `docs/description` - Documentation updates
-- `refactor/description` - Code improvements
-
-### Development Workflow
-
-1. **Fork** the repository
-2. **Create a feature branch**: `git checkout -b feature/my-feature`
-3. **Make changes** with clear commit messages
-4. **Test locally**:
-   ```bash
-   # Backend tests (if available)
-   pytest
-   
-   # Frontend linting
-   cd frontend && npm run lint
-   ```
-5. **Submit a Pull Request** with:
-   - Description of changes
-   - Any API modifications documented
-   - Environment variables added (if any)
-
-### Code Style
-
-- **Python**: Follow PEP 8, use type hints where possible
-- **JavaScript/React**: Use ESLint rules (configured in project)
-- **Comments**: Document complex logic, especially in agents
-
-### Adding New Features
-
-#### To Add a New Role (e.g., DevOps Engineer)
-
-1. Create curriculum: `agent2/Curriculum/devops_Curriculum.yaml`
-2. Create knowledge base: `agent2/knowledge_base_DEVOPS/`
-3. Update role mapping in:
-   - `Backend/main_orchestrator.py`
-   - `agent2/crew.py`
-   - `agent2/agents.py`
-4. Update frontend role selector
-
-#### To Modify Agent Behavior
-
-1. Edit agent definition in `agent2/agents.py`
-2. Update task prompts in `agent2/tasks.py`
-3. Modify tools in `agent2/tools.py`
-4. Test via `POST /api/run-aptitude` endpoint
-
-#### To Add API Endpoints
-
-1. Create route in `Backend/main_orchestrator.py`
-2. Define request/response Pydantic models
-3. Add authentication if needed via `get_current_user` dependency
-4. Document in API section above
-
----
-
 ## 📦 Dependencies
 
 ### Python (requirements.txt)
@@ -474,52 +411,6 @@ We welcome contributions! Please follow these guidelines:
 - **react-router-dom (^7.18.1)**: Routing
 - **axios (^1.18.1)**: HTTP client
 - **vite (^8.1.1)**: Build tool
-
----
-
-## 🐛 Troubleshooting
-
-### Issue: "Failed to import Agent 1"
-
-**Cause**: Missing dependencies or incorrect Python path
-
-**Solution**:
-```bash
-pip install -r requirements.txt --ignore-requires-python
-python -m Backend.main_orchestrator  # Use module syntax
-```
-
-### Issue: WebSocket connection fails
-
-**Cause**: CORS misconfiguration or frontend URL mismatch
-
-**Solution**:
-```bash
-# Check .env
-echo $FRONTEND_URL  # Should match your frontend origin
-
-# Update if needed
-export FRONTEND_URL=http://localhost:5173
-```
-
-### Issue: Cached responses not updating
-
-**Cause**: `day` parameter still matches cache key
-
-**Solution**:
-```bash
-# Reset cache for a role
-DELETE /api/journey/reset?role=Software Engineer&level=Beginner
-```
-
-### Issue: LLM Rate Limiting
-
-**Cause**: Too many concurrent requests
-
-**Solution**:
-- Adjust `max_tokens` in agent configs
-- Implement request queuing in production
-- Contact Fireworks for rate limit increase
 
 ---
 
@@ -546,17 +437,26 @@ WS_BASE_URL=wss://your-backend.onrender.com
 
 ---
 
-## 📄 License
+## 🤝 Contributing
 
-This project is part of the ACT-II Hackathon. Usage governed by hackathon terms.
+We welcome contributions from the community! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+
+- Development setup and workflow
+- Branch naming conventions
+- Code style guidelines
+- PR submission process
+- Feature contribution guidelines
+- Common setup and runtime issues
 
 ---
 
+## 📄 License
 
-**Questions or Issues?**
-- Open a [GitHub Issue](https://github.com/ermadanvk-afk/ACT-II-Hackathon-AMD/issues)
-- Check existing documentation in agent READMEs
-- Review API logs via Docker container
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
+
+**Copyright © 2026 Madan Vishwakarma**
+
+You are free to use, modify, and distribute this software for any purpose, provided you include the original license notice.
 
 ---
 
@@ -569,6 +469,15 @@ This project is part of the ACT-II Hackathon. Usage governed by hackathon terms.
 - [ ] Implement peer comparison (anonymized benchmarking)
 - [ ] Mobile app for on-the-go practice
 - [ ] Multi-language support for international users
+
+---
+
+## ❓ Questions or Issues?
+
+- Open a [GitHub Issue](https://github.com/ermadanvk-afk/ACT-II-Hackathon-AMD/issues)
+- Check existing documentation in agent READMEs
+- Review API logs via Docker container
+- See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup help and common issues
 
 ---
 
